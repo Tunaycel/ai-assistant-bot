@@ -4,353 +4,372 @@ import os
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
 from PIL import Image
-import io
 
-# Load environment variables
 load_dotenv()
 
-# Page configuration
-st.set_page_config(
-    page_title="AI Assistant Monolith",
-    page_icon="🤖",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+st.set_page_config(page_title="Monolith AI", page_icon="◆", layout="wide", initial_sidebar_state="expanded")
 
-# Ultimate Monolith Dark Theme CSS
 st.markdown("""
-    <style>
-    /* Main Background - Ultimate Dark */
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+    
+    /* Modern Gradient Background */
     .stApp {
-        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0f0f23 100%);
+        background: linear-gradient(135deg, #1e1b4b 0%, #312e81 25%, #1e1b4b 50%, #1e293b 75%, #0f172a 100%);
+        background-size: 400% 400%;
+        animation: gradient 15s ease infinite;
     }
     
-    /* Sidebar Styling */
-    [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #16213e 0%, #0f0f23 100%);
-        border-right: 2px solid #00d4ff;
+    @keyframes gradient {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
     }
     
-    [data-testid="stSidebar"] h1, 
-    [data-testid="stSidebar"] h2,
-    [data-testid="stSidebar"] h3,
-    [data-testid="stSidebar"] label {
-        color: #00d4ff !important;
-        font-weight: 600;
+    .stApp::before {
+        content: '';
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 50%, rgba(168, 85, 247, 0.15) 0%, transparent 50%);
+        pointer-events: none;
     }
     
-    /* Chat Messages */
-    .chat-message {
-        padding: 1.5rem;
-        border-radius: 15px;
-        margin-bottom: 1.5rem;
-        border-left: 5px solid;
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
-        animation: slideIn 0.4s ease-out;
-        backdrop-filter: blur(10px);
+    .block-container { padding: 3rem 4rem !important; max-width: 1100px !important; }
+    
+    /* Premium Sidebar */
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(180deg, rgba(30, 27, 75, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+        backdrop-filter: blur(20px);
+        border-right: 1px solid rgba(99, 102, 241, 0.2);
+        box-shadow: 4px 0 30px rgba(0, 0, 0, 0.3);
     }
     
-    .user-message {
-        background: linear-gradient(135deg, #1e3a5f 0%, #2a4d7c 100%);
-        border-left-color: #00d4ff;
-        color: #ffffff;
-        margin-left: 3rem;
+    section[data-testid="stSidebar"] > div { padding: 2rem 1.5rem; }
+    
+    section[data-testid="stSidebar"] h2 {
+        color: #e0e7ff !important;
+        font-size: 0.75rem !important;
+        font-weight: 800 !important;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        margin: 2rem 0 1.5rem !important;
+        background: linear-gradient(135deg, #818cf8, #c4b5fd);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
     
-    .assistant-message {
-        background: linear-gradient(135deg, #2d1b4e 0%, #3d2963 100%);
-        border-left-color: #bb86fc;
-        color: #e0e0e0;
-        margin-right: 3rem;
+    section[data-testid="stSidebar"] h3 {
+        color: #c7d2fe !important;
+        font-size: 0.938rem !important;
+        font-weight: 600 !important;
+        margin: 2rem 0 1rem !important;
     }
     
-    .system-message {
-        background: linear-gradient(135deg, #1a3a1a 0%, #2d4d2d 100%);
-        border-left-color: #4caf50;
-        color: #ffffff;
-        text-align: center;
-    }
-    
-    @keyframes slideIn {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    /* Header Styling */
-    .main-header {
-        text-align: center;
-        color: #00d4ff;
-        font-size: 3.5rem;
-        font-weight: 900;
-        text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
-        margin-bottom: 0.5rem;
-        letter-spacing: 2px;
-    }
-    
-    .subtitle {
-        text-align: center;
-        color: #bb86fc;
-        font-size: 1.3rem;
-        font-weight: 300;
-        margin-bottom: 2rem;
-    }
-    
-    /* File Upload Styling */
+    /* Premium File Upload */
     [data-testid="stFileUploader"] {
-        background: rgba(255, 255, 255, 0.05);
-        border: 2px dashed #00d4ff;
-        border-radius: 10px;
-        padding: 1rem;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.08) 100%);
+        border: 2px solid rgba(129, 140, 248, 0.3);
+        border-radius: 16px;
+        padding: 2rem;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
     }
     
-    /* Button Styling */
-    .stButton > button {
-        background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
-        color: #000000;
-        font-weight: 700;
+    [data-testid="stFileUploader"]::before {
+        content: '';
+        position: absolute;
+        top: 0; left: -100%;
+        width: 100%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(129, 140, 248, 0.2), transparent);
+        animation: shimmer 3s infinite;
+    }
+    
+    @keyframes shimmer {
+        0% { left: -100%; }
+        100% { left: 100%; }
+    }
+    
+    [data-testid="stFileUploader"]:hover {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.12) 100%);
+        border-color: rgba(129, 140, 248, 0.5);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
+    }
+    
+    [data-testid="stFileUploader"] section { border: none !important; padding: 0 !important; }
+    
+    [data-testid="stFileUploader"] button {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 10px !important;
+        padding: 0.75rem 1.5rem !important;
+        font-size: 0.875rem !important;
+        font-weight: 600 !important;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3) !important;
+        transition: all 0.2s !important;
+    }
+    
+    [data-testid="stFileUploader"] button:hover {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4) !important;
+    }
+    
+    [data-testid="stFileUploader"] small { color: #a5b4fc !important; font-size: 0.813rem; }
+    
+    /* Premium Button */
+    .stButton button {
+        width: 100%;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
         border: none;
-        border-radius: 10px;
-        padding: 0.7rem 2rem;
-        box-shadow: 0 4px 12px rgba(0, 212, 255, 0.4);
+        border-radius: 12px;
+        padding: 0.875rem 1.5rem;
+        font-size: 0.938rem;
+        font-weight: 600;
+        letter-spacing: 0.025em;
+        box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
         transition: all 0.3s ease;
     }
     
-    .stButton > button:hover {
-        background: linear-gradient(135deg, #00ffff 0%, #00d4ff 100%);
-        box-shadow: 0 6px 20px rgba(0, 212, 255, 0.6);
+    .stButton button:hover {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
         transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(99, 102, 241, 0.5);
     }
     
-    /* Input Styling */
-    .stTextInput > div > div > input {
-        background: rgba(255, 255, 255, 0.1);
-        color: #ffffff;
-        border: 2px solid #00d4ff;
-        border-radius: 10px;
+    /* Stunning Header */
+    h1 {
+        color: #fff !important;
+        font-size: 3rem !important;
+        font-weight: 800 !important;
+        letter-spacing: -0.03em !important;
+        margin-bottom: 1rem !important;
+        background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 50%, #a5b4fc 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 0 40px rgba(99, 102, 241, 0.3);
     }
     
-    /* Success/Info Messages */
-    .stSuccess, .stInfo {
-        background: rgba(0, 212, 255, 0.1);
-        border-left: 5px solid #00d4ff;
-        color: #00d4ff;
+    /* Premium Messages */
+    .msg {
+        padding: 1.5rem 2rem;
+        border-radius: 20px;
+        margin-bottom: 1.5rem;
+        font-size: 0.938rem;
+        line-height: 1.7;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+        animation: slideUp 0.4s ease;
     }
     
-    /* Tab Styling */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 2rem;
-        background: rgba(255, 255, 255, 0.05);
-        padding: 1rem;
-        border-radius: 10px;
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
     }
     
-    .stTabs [data-baseweb="tab"] {
-        color: #00d4ff;
-        font-weight: 600;
-        font-size: 1.1rem;
+    .msg:hover { transform: translateX(4px); }
+    
+    .msg-user {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(79, 70, 229, 0.1) 100%);
+        border: 1px solid rgba(129, 140, 248, 0.3);
+        color: #e0e7ff;
+        margin-left: 3rem;
+        box-shadow: 0 4px 16px rgba(99, 102, 241, 0.1);
     }
     
-    /* Expander */
-    .streamlit-expanderHeader {
-        background: rgba(0, 212, 255, 0.1);
-        color: #00d4ff;
-        border-radius: 10px;
-        font-weight: 600;
+    .msg-ai {
+        background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%);
+        border: 1px solid rgba(196, 181, 253, 0.3);
+        border-left: 4px solid #a78bfa;
+        color: #e0e7ff;
+        margin-right: 3rem;
+        box-shadow: 0 4px 16px rgba(168, 85, 247, 0.1);
     }
-    </style>
-    """, unsafe_allow_html=True)
+    
+    .msg-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 0.75rem;
+        opacity: 0.8;
+    }
+    
+    .msg-user .msg-label { color: #a5b4fc; }
+    .msg-ai .msg-label { color: #c4b5fd; }
+    
+    /* Premium Chat Input */
+    [data-testid="stChatInput"] {
+        background: linear-gradient(135deg, rgba(30, 27, 75, 0.8) 0%, rgba(15, 23, 42, 0.8) 100%) !important;
+        backdrop-filter: blur(20px) !important;
+        border: 2px solid rgba(129, 140, 248, 0.3) !important;
+        border-radius: 16px !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+        transition: all 0.3s !important;
+    }
+    
+    [data-testid="stChatInput"]:focus-within {
+        border-color: rgba(129, 140, 248, 0.6) !important;
+        box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3) !important;
+    }
+    
+    [data-testid="stChatInput"] textarea {
+        background: transparent !important;
+        color: #e0e7ff !important;
+        font-size: 0.938rem !important;
+        padding: 1rem !important;
+    }
+    
+    [data-testid="stChatInput"] textarea::placeholder { color: #6b7280 !important; }
+    
+    /* Premium Alerts */
+    .stSuccess {
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(34, 197, 94, 0.1) 100%) !important;
+        backdrop-filter: blur(10px) !important;
+        border: 1px solid rgba(74, 222, 128, 0.3) !important;
+        border-radius: 12px !important;
+        color: #86efac !important;
+        padding: 1rem 1.25rem !important;
+        box-shadow: 0 4px 16px rgba(34, 197, 94, 0.1) !important;
+    }
+    
+    .stError {
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%) !important;
+        backdrop-filter: blur(10px) !important;
+        border: 1px solid rgba(248, 113, 113, 0.3) !important;
+        border-radius: 12px !important;
+        color: #fca5a5 !important;
+        padding: 1rem 1.25rem !important;
+        box-shadow: 0 4px 16px rgba(239, 68, 68, 0.1) !important;
+    }
+    
+    /* Premium Image */
+    img {
+        border-radius: 12px;
+        border: 2px solid rgba(129, 140, 248, 0.3);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s;
+    }
+    
+    img:hover {
+        transform: scale(1.02);
+        box-shadow: 0 12px 32px rgba(99, 102, 241, 0.2);
+    }
+    
+    /* Divider */
+    hr {
+        border: none;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(129, 140, 248, 0.3), transparent);
+        margin: 2.5rem 0;
+    }
+    
+    /* Premium Scrollbar */
+    ::-webkit-scrollbar { width: 10px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); }
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #6366f1, #8b5cf6);
+        border-radius: 5px;
+    }
+    ::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #4f46e5, #7c3aed); }
+    
+    /* Spinner */
+    .stSpinner > div { border-top-color: #6366f1 !important; border-right-color: #8b5cf6 !important; }
+    
+    /* Hide */
+    #MainMenu, footer, header { visibility: hidden; }
+    .stDeployButton { display: none; }
+</style>
+""", unsafe_allow_html=True)
 
-# API key check
-gemini_api_key = os.getenv("GEMINI_API_KEY")
-if not gemini_api_key or gemini_api_key == "your_gemini_api_key_here":
-    st.error("⚠️ Gemini API key not found!")
-    st.warning("Please set GEMINI_API_KEY in your .env file")
+# API
+key = os.getenv("GEMINI_API_KEY")
+if not key or key == "your_gemini_api_key_here":
+    st.error("⚠️ API key required")
     st.stop()
 
-# Configure Gemini API
-genai.configure(api_key=gemini_api_key)
-
-# Initialize models
+genai.configure(api_key=key)
 try:
-    text_model = genai.GenerativeModel('gemini-1.5-flash')
-    vision_model = genai.GenerativeModel('gemini-1.5-flash')
-except Exception as e:
-    st.error(f"❌ Error initializing models: {str(e)}")
+    model = genai.GenerativeModel('gemini-1.5-flash')
+except:
+    st.error("Model failed")
     st.stop()
 
-# Session state initialization
+# State
 if "messages" not in st.session_state:
     st.session_state.messages = []
-if "pdf_text" not in st.session_state:
-    st.session_state.pdf_text = ""
-if "current_image" not in st.session_state:
-    st.session_state.current_image = None
+if "pdf" not in st.session_state:
+    st.session_state.pdf = ""
+if "img" not in st.session_state:
+    st.session_state.img = None
 
 # Header
-st.markdown('<h1 class="main-header">🤖 AI ASSISTANT MONOLITH</h1>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Ultimate Intelligence • PDF Analysis • Vision • Chat</p>', unsafe_allow_html=True)
-
-# Sidebar - File Upload Section
-with st.sidebar:
-    st.markdown("### 📁 FILE UPLOAD CENTER")
-    st.markdown("---")
-    
-    # PDF Upload Section
-    st.markdown("#### 📄 PDF Document")
-    uploaded_pdf = st.file_uploader(
-        "Upload PDF file",
-        type=['pdf'],
-        help="Upload a PDF document to analyze its content"
-    )
-    
-    if uploaded_pdf:
-        try:
-            pdf_reader = PdfReader(uploaded_pdf)
-            pdf_text = ""
-            for page in pdf_reader.pages:
-                pdf_text += page.extract_text()
-            
-            st.session_state.pdf_text = pdf_text
-            st.success(f"✅ PDF loaded: {len(pdf_reader.pages)} pages")
-            
-            with st.expander("📖 View PDF Content"):
-                st.text_area("Content", pdf_text[:1000] + "...", height=200, disabled=True)
-        except Exception as e:
-            st.error(f"❌ Error reading PDF: {str(e)}")
-    
-    st.markdown("---")
-    
-    # Image Upload Section
-    st.markdown("#### 🖼️ Image Analysis")
-    uploaded_image = st.file_uploader(
-        "Upload Image file",
-        type=['png', 'jpg', 'jpeg', 'webp'],
-        help="Upload an image to analyze with AI vision"
-    )
-    
-    if uploaded_image:
-        try:
-            image = Image.open(uploaded_image)
-            st.session_state.current_image = image
-            st.image(image, caption="Uploaded Image", use_container_width=True)
-            st.success("✅ Image loaded successfully")
-        except Exception as e:
-            st.error(f"❌ Error loading image: {str(e)}")
-    
-    st.markdown("---")
-    
-    # Clear All Button
-    if st.button("🗑️ CLEAR ALL DATA", use_container_width=True):
-        st.session_state.messages = []
-        st.session_state.pdf_text = ""
-        st.session_state.current_image = None
-        st.rerun()
-    
-    st.markdown("---")
-    st.markdown("""
-    ### 💡 TIPS
-    - Upload PDF for document analysis
-    - Upload images for visual AI
-    - Ask questions about uploaded content
-    - Combine text and vision queries
-    """)
-
-# Main Chat Area
-st.markdown("### 💬 CONVERSATION")
-
-# Display chat history
-for message in st.session_state.messages:
-    role = message["role"]
-    content = message["content"]
-    
-    if role == "user":
-        st.markdown(f"""
-            <div class="chat-message user-message">
-                <strong>👤 YOU</strong><br><br>
-                {content}
-            </div>
-        """, unsafe_allow_html=True)
-    elif role == "assistant":
-        st.markdown(f"""
-            <div class="chat-message assistant-message">
-                <strong>🤖 AI ASSISTANT</strong><br><br>
-                {content}
-            </div>
-        """, unsafe_allow_html=True)
-    elif role == "system":
-        st.markdown(f"""
-            <div class="chat-message system-message">
-                <strong>⚡ SYSTEM</strong><br><br>
-                {content}
-            </div>
-        """, unsafe_allow_html=True)
-
-# User input
-user_input = st.chat_input("🎯 Type your message here...")
-
-if user_input:
-    # Add user message
-    st.session_state.messages.append({"role": "user", "content": user_input})
-    
-    # Display user message
-    st.markdown(f"""
-        <div class="chat-message user-message">
-            <strong>👤 YOU</strong><br><br>
-            {user_input}
-        </div>
-    """, unsafe_allow_html=True)
-    
-    # Process with AI
-    with st.spinner("🧠 AI is processing..."):
-        try:
-            # Prepare context
-            context = ""
-            
-            # Add PDF context if available
-            if st.session_state.pdf_text:
-                context += f"\n\n[PDF CONTENT]\n{st.session_state.pdf_text[:3000]}\n"
-            
-            # Handle image analysis
-            if st.session_state.current_image and ("image" in user_input.lower() or "picture" in user_input.lower() or "photo" in user_input.lower() or "what" in user_input.lower()):
-                # Use vision model for image
-                response = vision_model.generate_content([user_input, st.session_state.current_image])
-                assistant_message = response.text
-            else:
-                # Use text model with context
-                prompt = f"{context}\n\nUser Question: {user_input}"
-                response = text_model.generate_content(prompt)
-                assistant_message = response.text
-            
-            # Add AI response
-            st.session_state.messages.append({"role": "assistant", "content": assistant_message})
-            
-            # Display AI response
-            st.markdown(f"""
-                <div class="chat-message assistant-message">
-                    <strong>🤖 AI ASSISTANT</strong><br><br>
-                    {assistant_message}
-                </div>
-            """, unsafe_allow_html=True)
-            
-            st.rerun()
-            
-        except Exception as e:
-            st.error(f"❌ Error: {str(e)}")
-            st.info("Please check your API key and try again.")
-
-# Footer
+st.markdown("# ◆ Monolith AI")
+st.markdown('<p style="color: #94a3b8; font-size: 1.125rem; margin-top: -0.75rem; font-weight: 500;">Enterprise intelligence platform • Document analysis • Vision AI • Real-time processing</p>', unsafe_allow_html=True)
 st.markdown("---")
-col1, col2, col3 = st.columns([1, 2, 1])
-with col2:
-    st.markdown("""
-    <div style='text-align: center; color: #00d4ff;'>
-        <p><strong>⚡ ULTIMATE MONOLITH ⚡</strong></p>
-        <p>Powered by Google Gemini 1.5 Flash | Built with Python & Streamlit</p>
-    </div>
-    """, unsafe_allow_html=True)
+
+# Sidebar
+with st.sidebar:
+    st.markdown("## WORKSPACE")
+    
+    st.markdown("### Documents")
+    pdf = st.file_uploader("", type=['pdf'], key="pdf_upload", label_visibility="collapsed")
+    if pdf:
+        try:
+            reader = PdfReader(pdf)
+            st.session_state.pdf = "".join(p.extract_text() for p in reader.pages)
+            st.success(f"✓ {len(reader.pages)} pages loaded successfully")
+        except Exception as e:
+            st.error(f"Error: {str(e)}")
+    
+    st.markdown("### Images")
+    img = st.file_uploader("", type=['png','jpg','jpeg','webp'], key="img_upload", label_visibility="collapsed")
+    if img:
+        try:
+            st.session_state.img = Image.open(img)
+            st.image(st.session_state.img, use_container_width=True)
+            st.success("✓ Image loaded and ready")
+        except Exception as e:
+            st.error(f"Error: {str(e)}")
+    
+    st.markdown("---")
+    if st.button("Clear Session"):
+        st.session_state.messages = []
+        st.session_state.pdf = ""
+        st.session_state.img = None
+        st.rerun()
+
+# Messages
+for m in st.session_state.messages:
+    if m["role"] == "user":
+        st.markdown(f'<div class="msg msg-user"><div class="msg-label">You</div>{m["content"]}</div>', unsafe_allow_html=True)
+    else:
+        st.markdown(f'<div class="msg msg-ai"><div class="msg-label">Monolith AI</div>{m["content"]}</div>', unsafe_allow_html=True)
+
+# Input
+prompt = st.chat_input("Ask anything...")
+
+if prompt:
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.markdown(f'<div class="msg msg-user"><div class="msg-label">You</div>{prompt}</div>', unsafe_allow_html=True)
+    
+    with st.spinner("Processing..."):
+        try:
+            ctx = f"Document context:\n{st.session_state.pdf[:5000]}\n\n" if st.session_state.pdf else ""
+            
+            if st.session_state.img and any(w in prompt.lower() for w in ['image','picture','photo','see','show','describe','what','analyze','look','view']):
+                resp = model.generate_content([ctx + prompt, st.session_state.img])
+            else:
+                resp = model.generate_content(ctx + prompt)
+            
+            ans = resp.text
+            st.session_state.messages.append({"role": "assistant", "content": ans})
+            st.markdown(f'<div class="msg msg-ai"><div class="msg-label">Monolith AI</div>{ans}</div>', unsafe_allow_html=True)
+            st.rerun()
+        except Exception as e:
+            st.error(f"Error: {str(e)}")
