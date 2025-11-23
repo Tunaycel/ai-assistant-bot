@@ -295,7 +295,7 @@ if not key or key == "your_gemini_api_key_here":
 
 genai.configure(api_key=key)
 try:
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-pro')
 except:
     st.error("Model failed")
     st.stop()
