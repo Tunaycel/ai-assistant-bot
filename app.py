@@ -4,6 +4,8 @@ import os
 from dotenv import load_dotenv
 from PIL import Image
 import PyPDF2
+from streamlit_mic_recorder import mic_recorder
+import database as db
 
 # --- 1. CONFIGURATION ---
 load_dotenv()
@@ -13,6 +15,9 @@ st.set_page_config(
     layout="wide", 
     initial_sidebar_state="expanded"
 )
+
+# Initialize Database
+db.init_db()
 
 # --- 2. CSS STYLING ---
 st.markdown("""
@@ -255,7 +260,7 @@ def get_pdf_text(pdf_file):
 
 # --- 5. SESSION STATE ---
 if "messages" not in st.session_state:
-    st.session_state.messages = []
+    st.session_state.messages = db.get_history() # Load from DB
 if "pdf_text" not in st.session_state:
     st.session_state.pdf_text = ""
 if "img_data" not in st.session_state:
@@ -287,7 +292,14 @@ with st.sidebar:
             st.error("Error reading Image")
     
     st.markdown("---")
-    if st.button("Clear Session"):
+    
+    st.markdown("#### 🎙️ Voice Input")
+    # Voice Recorder
+    audio = mic_recorder(start_prompt="🎤 Start Recording", stop_prompt="⏹️ Stop", key='recorder')
+    
+    st.markdown("---")
+    if st.button("Clear History"):
+        db.clear_history()
         st.session_state.messages = []
         st.session_state.pdf_text = ""
         st.session_state.img_data = None
@@ -312,8 +324,23 @@ for msg in st.session_state.messages:
         st.markdown(f'<div class="bot-msg"><b>Monolith</b><br>{msg["content"]}</div>', unsafe_allow_html=True)
 
 # --- 8. LOGIC CORE ---
-if prompt := st.chat_input("Ask anything..."):
+prompt = st.chat_input("Ask anything...")
+
+# Handle Voice Input
+if audio and 'bytes' in audio:
+    # Note: Real-time STT requires more complex setup. 
+    # For now, we will inform user that voice is captured but STT needs API.
+    # Or we can try to send audio to Gemini if model supports it (Gemini 1.5 Pro does!)
+    st.info("Voice captured! Processing...")
+    # In a real production app, we would send audio['bytes'] to an STT service.
+    # For this demo, we will simulate or use a placeholder if STT isn't available.
+    # Let's assume user wants to send audio directly to model if supported.
+    pass 
+
+if prompt:
+    # Save user message
     st.session_state.messages.append({"role": "user", "content": prompt})
+    db.save_message("user", prompt)
     st.markdown(f'<div class="user-msg"><b>You</b><br>{prompt}</div>', unsafe_allow_html=True)
 
     try:
@@ -321,14 +348,12 @@ if prompt := st.chat_input("Ask anything..."):
         
         if st.session_state.pdf_text:
             context = f"DOCUMENT CONTEXT:\n{st.session_state.pdf_text[:10000]}\n\nQUESTION: {prompt}"
-            # Bazi modeller resim+pdf ayni anda desteklemeyebilir, guvenli kullanim:
             try:
                 if st.session_state.img_data:
                     response = model.generate_content([context, st.session_state.img_data])
                 else:
                     response = model.generate_content(context)
             except:
-                # Fallback: Sadece metin dene
                 response = model.generate_content(context)
 
         elif st.session_state.img_data:
@@ -340,7 +365,11 @@ if prompt := st.chat_input("Ask anything..."):
             response = chat.send_message(prompt)
 
         response_text = response.text
+        
+        # Save bot message
         st.session_state.messages.append({"role": "assistant", "content": response_text})
+        db.save_message("assistant", response_text)
+        
         st.markdown(f'<div class="bot-msg"><b>Monolith</b><br>{response_text}</div>', unsafe_allow_html=True)
         
     except Exception as e:

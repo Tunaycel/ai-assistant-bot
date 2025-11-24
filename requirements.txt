@@ -3,3 +3,4 @@ google-generativeai>=0.8.3
 python-dotenv
 PyPDF2
 Pillow
+streamlit-mic-recorder
