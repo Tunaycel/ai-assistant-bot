@@ -1,157 +1,77 @@
-# 🤖 AI Assistant Monolith
+# ◆ Monolith AI
+### Enterprise Intelligence Platform
 
-**Ultimate Intelligence Platform** - A powerful, all-in-one AI assistant combining chat, PDF analysis, and image recognition capabilities. Built with Python, Streamlit, and Google Gemini 1.5 Flash.
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python)
+![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit)
+![Gemini AI](https://img.shields.io/badge/Gemini%20AI-8E75B2?style=for-the-badge&logo=google)
 
-## 🚀 Features
+**Monolith AI** is a next-generation intelligence platform designed for enterprise-grade document analysis and multi-modal interaction. Built with a sleek **Glassmorphism UI**, it seamlessly integrates **Google's Gemini AI** to provide real-time insights from text, documents, and visual data.
 
-### Core Capabilities
-- 💬 **Advanced Chat** - Intelligent conversations with context awareness
-- 📄 **PDF Analysis** - Extract and analyze text from PDF documents
-- 🖼️ **Image Recognition** - AI-powered image analysis and description
-- 🎨 **Ultimate Dark Theme** - Modern, sleek monolith design
-- ⚡ **Real-time Processing** - Instant responses and analysis
-- 🔄 **Multi-modal AI** - Combine text, PDF, and vision in one conversation
+---
 
-### Design Features
-- 🌑 Dark mode optimized interface
-- 💎 Premium gradient styling
-- 📱 Responsive sidebar layout
-- ✨ Smooth animations and transitions
-- 🎯 Professional file upload system
+## ✨ Features
+
+### 🧠 Multi-modal Chat (Text & Vision)
+Engage in natural conversations with an AI that sees what you see. Upload images and ask questions about them in real-time.
+
+### 📄 RAG Support (PDF Document Analysis)
+Unlock the knowledge hidden in your documents. Upload PDF reports, contracts, or papers, and let Monolith AI analyze, summarize, and answer questions based on the content.
+
+### 🎨 Glassmorphism UI Design
+Experience a modern, premium interface designed for focus and clarity. The dark-themed, translucent aesthetic provides a comfortable and professional workspace.
+
+### 🔒 Secure API Handling
+Built with security in mind. API keys are managed securely via environment variables, ensuring your credentials never leak into the codebase.
+
+---
 
 ## 🚀 Installation
 
-### 1. Install Required Packages
+Follow these steps to set up Monolith AI on your local machine.
 
+### 1. Clone the Repository
+```bash
+git clone https://github.com/yourusername/monolith-ai.git
+cd monolith-ai
+```
+
+### 2. Install Dependencies
+Ensure you have Python installed, then run:
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Get Your Gemini API Key
+### 3. Configure Environment
+Create a `.env` file in the root directory of the project and add your Google Gemini API key:
 
-1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Sign in with your Google account
-3. Click "Create API Key"
-4. Copy the key
-
-### 3. Set Environment Variables
-
-Create a `.env` file in the project directory and add:
-
+**File:** `.env`
+```ini
+GEMINI_API_KEY=your_actual_api_key_here
 ```
-GEMINI_API_KEY=your_gemini_api_key_here
-```
+> Don't have a key? Get one from [Google AI Studio](https://aistudio.google.com/).
 
-Replace `your_gemini_api_key_here` with your actual API key.
+---
 
-## 🎮 Usage
+## ⚡ Usage
 
-Run this command in your terminal to start the application:
+Launch the application with a single command:
 
 ```bash
 streamlit run app.py
 ```
 
-Your browser will automatically open `http://localhost:8501`.
-
-## 💡 How to Use
-
-### 📄 PDF Analysis
-1. Click **"PDF Document"** in the sidebar
-2. Upload your PDF file
-3. Ask questions about the document content
-4. Example: *"Summarize the main points from this PDF"*
-
-### 🖼️ Image Analysis
-1. Click **"Image Analysis"** in the sidebar
-2. Upload an image (PNG, JPG, JPEG, WebP)
-3. Ask questions about the image
-4. Example: *"What's in this image?"* or *"Describe this picture"*
-
-### 💬 General Chat
-1. Simply type your question in the chat input
-2. Get intelligent responses from Gemini AI
-3. Context from uploaded files is automatically included
-
-### 🔄 Multi-Modal Queries
-- Upload both PDF and image
-- Ask questions that combine information from both
-- Clear all data with one click to start fresh
-
-## 📁 Project Structure
-
-```
-ai-assistant-bot/
-│
-├── app.py              # Main Monolith application with all features
-├── requirements.txt    # Python dependencies (Streamlit, Gemini, PyPDF2, Pillow)
-├── .env               # Environment variables (create this with your API key)
-├── .gitignore         # Git ignore file (protects .env)
-└── README.md          # Documentation
-```
-
-## 🎨 UI Features
-
-### Ultimate Monolith Design
-- **Dark Theme**: Professional black/dark blue gradient background
-- **Neon Accents**: Cyan (#00d4ff) and purple (#bb86fc) highlights
-- **Animated Chat**: Smooth slide-in animations for messages
-- **Sidebar Integration**: All file uploads in organized sidebar
-- **Modern Typography**: Bold, clean fonts with proper spacing
-- **Responsive Layout**: Adapts to different screen sizes
-
-## 🔒 Security Notes
-
-- Never share or commit your `.env` file to git
-- Keep your API key private
-- Monitor your usage limits
-
-## 🛠️ Technologies
-
-- **Python 3.8+** - Core programming language
-- **Streamlit** - Modern web interface framework
-- **Google Gemini 1.5 Flash** - Advanced AI model (text + vision)
-- **PyPDF2** - PDF text extraction and analysis
-- **Pillow (PIL)** - Image processing and handling
-- **python-dotenv** - Secure environment variable management
-
-## 📝 License
-
-This project is for educational purposes and free to use.
-
-## 🤝 Contributing
-
-Feel free to submit pull requests with your suggestions and contributions!
-
-## ⚠️ Troubleshooting
-
-### "Gemini API key not found" error
-- Make sure the `.env` file is in the project directory
-- Verify the API key is correctly copied
-- Check that the file name is exactly `.env`
-- Ensure the key starts with `AIza...`
-
-### PDF Upload Issues
-- Ensure the file is a valid PDF format
-- Check that the PDF is not password-protected
-- Try with a smaller PDF if you encounter memory issues
-
-### Image Upload Issues
-- Supported formats: PNG, JPG, JPEG, WebP
-- Make sure the image file is not corrupted
-- Try reducing image size if upload fails
-
-### "API rate limit" error
-- Ensure you have sufficient quota in your Google Cloud account
-- Wait a moment if you've exceeded the rate limit
-- Check your usage at [Google AI Studio](https://aistudio.google.com/)
-
-### Model Not Responding
-- Check your internet connection
-- Verify Google AI services are operational
-- Try clearing chat and restarting the app
+The application will open automatically in your default web browser at `http://localhost:8501`.
 
 ---
 
-💻 **Happy Building with Ultimate Monolith!** 🤖⚡
+## 🛠️ Tech Stack
 
+*   **Core:** Python
+*   **UI Framework:** Streamlit
+*   **AI Model:** Google Gemini Pro & Flash
+*   **Document Processing:** PyPDF2
+*   **Image Processing:** Pillow
+
+---
+
+© 2024 Monolith AI. All rights reserved.
