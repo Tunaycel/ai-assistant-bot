@@ -180,6 +180,20 @@ st.markdown("""
         to { opacity: 1; transform: translateX(0); }
     }
 
+    /* --- SIDEBAR BUTTONS --- */
+    .stButton > button {
+        width: 100%;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.1);
+        background: rgba(255,255,255,0.05);
+        color: white;
+        transition: all 0.3s;
+    }
+    .stButton > button:hover {
+        background: rgba(99, 102, 241, 0.2);
+        border-color: var(--accent-primary);
+    }
+
     /* --- UTILS --- */
     #MainMenu, footer, header { visibility: hidden; }
     .stDeployButton { display: none; }
@@ -259,16 +273,50 @@ def get_pdf_text(pdf_file):
     return text
 
 # --- 5. SESSION STATE ---
-if "messages" not in st.session_state:
-    st.session_state.messages = db.get_history() # Load from DB
+if "current_session_id" not in st.session_state:
+    # Create first session if none exists
+    sessions = db.get_all_sessions()
+    if not sessions:
+        st.session_state.current_session_id = db.create_session()
+    else:
+        st.session_state.current_session_id = sessions[0]['id']
+
 if "pdf_text" not in st.session_state:
     st.session_state.pdf_text = ""
 if "img_data" not in st.session_state:
     st.session_state.img_data = None
 
+# Load messages for current session
+st.session_state.messages = db.get_messages(st.session_state.current_session_id)
+
 # --- 6. SIDEBAR (WORKSPACE) ---
 with st.sidebar:
     st.markdown("### WORKSPACE")
+    
+    # New Chat Button
+    if st.button("➕ New Chat", type="primary"):
+        st.session_state.current_session_id = db.create_session()
+        st.session_state.pdf_text = ""
+        st.session_state.img_data = None
+        st.rerun()
+        
+    st.markdown("---")
+    
+    # Chat History List
+    st.markdown("#### 🕒 History")
+    sessions = db.get_all_sessions()
+    for s in sessions:
+        # Highlight current session
+        if s['id'] == st.session_state.current_session_id:
+            if st.button(f"👉 {s['title']}", key=s['id']):
+                pass # Already here
+        else:
+            if st.button(f"▫️ {s['title']}", key=s['id']):
+                st.session_state.current_session_id = s['id']
+                st.session_state.pdf_text = ""
+                st.session_state.img_data = None
+                st.rerun()
+
     st.markdown("---")
     
     st.markdown("#### 📄 Documents")
@@ -298,11 +346,14 @@ with st.sidebar:
     audio = mic_recorder(start_prompt="🎤 Start Recording", stop_prompt="⏹️ Stop", key='recorder')
     
     st.markdown("---")
-    if st.button("Clear History"):
-        db.clear_history()
-        st.session_state.messages = []
-        st.session_state.pdf_text = ""
-        st.session_state.img_data = None
+    if st.button("🗑️ Delete Chat"):
+        db.delete_session(st.session_state.current_session_id)
+        # Switch to another session or create new
+        sessions = db.get_all_sessions()
+        if sessions:
+            st.session_state.current_session_id = sessions[0]['id']
+        else:
+            st.session_state.current_session_id = db.create_session()
         st.rerun()
 
 # --- 7. MAIN UI ---
@@ -328,19 +379,13 @@ prompt = st.chat_input("Ask anything...")
 
 # Handle Voice Input
 if audio and 'bytes' in audio:
-    # Note: Real-time STT requires more complex setup. 
-    # For now, we will inform user that voice is captured but STT needs API.
-    # Or we can try to send audio to Gemini if model supports it (Gemini 1.5 Pro does!)
     st.info("Voice captured! Processing...")
-    # In a real production app, we would send audio['bytes'] to an STT service.
-    # For this demo, we will simulate or use a placeholder if STT isn't available.
-    # Let's assume user wants to send audio directly to model if supported.
     pass 
 
 if prompt:
     # Save user message
     st.session_state.messages.append({"role": "user", "content": prompt})
-    db.save_message("user", prompt)
+    db.save_message(st.session_state.current_session_id, "user", prompt)
     st.markdown(f'<div class="user-msg"><b>You</b><br>{prompt}</div>', unsafe_allow_html=True)
 
     try:
@@ -368,9 +413,13 @@ if prompt:
         
         # Save bot message
         st.session_state.messages.append({"role": "assistant", "content": response_text})
-        db.save_message("assistant", response_text)
+        db.save_message(st.session_state.current_session_id, "assistant", response_text)
         
         st.markdown(f'<div class="bot-msg"><b>Monolith</b><br>{response_text}</div>', unsafe_allow_html=True)
+        
+        # Rerun to update sidebar title if it was the first message
+        if len(st.session_state.messages) <= 2:
+            st.rerun()
         
     except Exception as e:
         st.error(f"System Error: {e}")
