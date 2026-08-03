@@ -1,77 +1,108 @@
-# ◆ Monolith AI
-### Enterprise Intelligence Platform
+# ai-assistant-bot
 
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python)
-![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit)
-![Gemini AI](https://img.shields.io/badge/Gemini%20AI-8E75B2?style=for-the-badge&logo=google)
+A Streamlit chat client for Gemini with three things layered on top of a plain chat loop:
+persistent multi-session history in SQLite, PDF and image input, and a model resolver that
+finds a working Gemini model at startup instead of hardcoding one.
 
-**Monolith AI** is a next-generation intelligence platform designed for enterprise-grade document analysis and multi-modal interaction. Built with a sleek **Glassmorphism UI**, it seamlessly integrates **Google's Gemini AI** to provide real-time insights from text, documents, and visual data.
-
----
-
-## ✨ Features
-
-### 🧠 Multi-modal Chat (Text & Vision)
-Engage in natural conversations with an AI that sees what you see. Upload images and ask questions about them in real-time.
-
-### 📄 RAG Support (PDF Document Analysis)
-Unlock the knowledge hidden in your documents. Upload PDF reports, contracts, or papers, and let Monolith AI analyze, summarize, and answer questions based on the content.
-
-### 🎨 Glassmorphism UI Design
-Experience a modern, premium interface designed for focus and clarity. The dark-themed, translucent aesthetic provides a comfortable and professional workspace.
-
-### 🔒 Secure API Handling
-Built with security in mind. API keys are managed securely via environment variables, ensuring your credentials never leak into the codebase.
+Python · Streamlit · google-generativeai · SQLite · PyPDF2 · Pillow
 
 ---
 
-## 🚀 Installation
+## The part worth reading: model resolution
 
-Follow these steps to set up Monolith AI on your local machine.
+Gemini model IDs churn. A build pinned to `gemini-pro` stops working when that alias is
+retired, and the failure is a runtime exception on the first message, not something you catch
+at install time. This app resolves a model at startup instead:
 
-### 1. Clone the Repository
-```bash
-git clone https://github.com/yourusername/monolith-ai.git
-cd monolith-ai
+```python
+candidate_models = [
+    'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro',
+    'gemini-1.5-flash-latest', 'gemini-1.5-pro-latest',
+    'models/gemini-1.5-flash', 'models/gemini-1.5-pro', 'models/gemini-pro'
+]
 ```
 
-### 2. Install Dependencies
-Ensure you have Python installed, then run:
+Then it asks the API what else exists and appends anything advertising `generateContent`, so
+models released after this code was written are still reachable. Finally it walks the list and
+**sends a one-token test generation** to each candidate, returning the first that actually
+answers.
+
+Listing a model is not the same as being able to call it — quota, region and account tier all
+produce models that appear in `list_models()` and then fail on use. The test call is what makes
+the fallback real rather than theoretical. Every failed attempt is collected into `debug_logs`
+and surfaced in the UI, so when nothing works you can see exactly which model returned which
+error instead of a blank screen.
+
+If no candidate answers, the app stops with a clear error rather than starting into a broken
+state.
+
+## Documents: context injection, not retrieval
+
+Worth being precise, because the two get conflated. Uploading a PDF runs
+`PyPDF2.extract_text()` over every page and prepends the result to the prompt:
+
+```python
+context = f"DOCUMENT CONTEXT:\n{st.session_state.pdf_text[:10000]}\n\nQUESTION: {prompt}"
+```
+
+There is no chunking, no embedding model, no vector store and no retrieval step — the whole
+document goes into the context window, truncated at 10,000 characters. For single reports and
+papers that is the simpler and more accurate approach, since nothing can be missed by a bad
+similarity match. It does not scale past what fits in the window, and a real retrieval layer
+is the obvious next step if it needs to.
+
+## Conversation storage
+
+`database.py`, two tables:
+
+| | |
+|---|---|
+| `sessions` | `id` (UUID), `title`, `created_at` |
+| `messages` | autoincrement id, `session_id` FK, `role`, `content`, `timestamp` |
+
+Session titles name themselves. On the first user message in a session the row count is
+checked and the title is replaced with the first 30 characters of what was asked — so the
+sidebar reads like a list of questions rather than "New Chat" eight times.
+
+Deleting a session removes its messages first, then the session row.
+
+## Other input
+
+- **Images** — opened with Pillow and passed alongside the text prompt for visual questions.
+- **Voice** — `streamlit-mic-recorder` captures audio in the browser and hands the bytes to
+  the model.
+
+---
+
+## Running it
+
 ```bash
+git clone https://github.com/Tunaycel/ai-assistant-bot
+cd ai-assistant-bot
 pip install -r requirements.txt
 ```
 
-### 3. Configure Environment
-Create a `.env` file in the root directory of the project and add your Google Gemini API key:
+Create a `.env`:
 
-**File:** `.env`
 ```ini
-GEMINI_API_KEY=your_actual_api_key_here
+GEMINI_API_KEY=your_key_here
 ```
-> Don't have a key? Get one from [Google AI Studio](https://aistudio.google.com/).
 
----
-
-## ⚡ Usage
-
-Launch the application with a single command:
+A key comes from [Google AI Studio](https://aistudio.google.com/).
 
 ```bash
 streamlit run app.py
 ```
 
-The application will open automatically in your default web browser at `http://localhost:8501`.
+Opens on `http://localhost:8501`. The SQLite file `chat_history_v2.db` is created on first run
+in the working directory.
 
 ---
 
-## 🛠️ Tech Stack
+## Limitations
 
-*   **Core:** Python
-*   **UI Framework:** Streamlit
-*   **AI Model:** Google Gemini Pro & Flash
-*   **Document Processing:** PyPDF2
-*   **Image Processing:** Pillow
-
----
-
-© 2024 Monolith AI. All rights reserved.
+- Single user. There is no auth, and the database is a local file — every session in it belongs
+  to whoever is running the app.
+- PDF context is truncated at 10,000 characters, silently.
+- `PyPDF2.extract_text()` returns nothing useful for scanned PDFs; there is no OCR fallback.
+- The startup probe costs one generation call per candidate model until one succeeds.
